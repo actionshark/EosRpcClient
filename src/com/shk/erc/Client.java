@@ -2,6 +2,7 @@ package com.shk.erc;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import com.shk.js.data.Convert;
@@ -33,7 +34,9 @@ public class Client {
 		Socket mainSocket = null;
 
 		try {
-			mainSocket = new Socket(serverHost, serverPort);
+			mainSocket = new Socket();
+			mainSocket.setKeepAlive(true);
+			mainSocket.connect(new InetSocketAddress(serverHost, serverPort));
 
 			InputStream is = mainSocket.getInputStream();
 			OutputStream os = mainSocket.getOutputStream();
