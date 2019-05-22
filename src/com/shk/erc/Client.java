@@ -113,6 +113,8 @@ public class Client {
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
 						}
+						
+						Logger.print(Level.V, "write finish");
 					}
 				});
 			}
