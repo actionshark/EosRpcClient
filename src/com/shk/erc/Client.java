@@ -113,7 +113,7 @@ public class Client {
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
 
-							String content = "{\"code\": 500}";
+							String content = "{\"code\": 404}";
 
 							result = ("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: " + content.length()
 									+ "\r\nContent-type: application/json\r\nServer: WebSocket++/0.7.0\r\n\r\n"
