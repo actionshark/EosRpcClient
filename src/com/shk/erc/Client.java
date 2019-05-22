@@ -23,6 +23,8 @@ public class Client {
 			content = new byte[length];
 		}
 	}
+	
+	private Socket mSocket;
 
 	public String serverHost;
 	public int serverPort;
@@ -31,18 +33,32 @@ public class Client {
 	public int clientPort;
 
 	public void start() {
-		Socket mainSocket = null;
-
 		try {
-			mainSocket = new Socket();
-			mainSocket.setKeepAlive(true);
-			mainSocket.connect(new InetSocketAddress(serverHost, serverPort));
-
-			InputStream is = mainSocket.getInputStream();
-			OutputStream os = mainSocket.getOutputStream();
-			StreamReader sr = new StreamReader(is);
+			mSocket = new Socket();
+			mSocket.connect(new InetSocketAddress(serverHost, serverPort));
+			
+			ThreadUtil.getInstance().run(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						OutputStream os = mSocket.getOutputStream();
+						
+						synchronized (mSocket) {
+							os.write(Convert.n2bs(4, 4));
+							os.write(Convert.n2bs(0, 4));
+							os.flush();
+						}
+						
+						Logger.print(Level.V, "heart beat");
+					} catch (Exception e) {
+						Logger.print(Level.E, e);
+					}
+				}
+			}, 30000, 30000);
 
 			while (true) {
+				StreamReader sr = new StreamReader(mSocket.getInputStream());
+				
 				byte[] len = new byte[4];
 				sr.readFull(len);
 				int length = (int) Convert.bs2n(len) - 4;
@@ -51,7 +67,12 @@ public class Client {
 				final Request request = new Request(length);
 
 				sr.readFull(request.id);
-				Logger.print(Level.V, "read id " + Convert.bs2n(request.id));
+				int id = (int) Convert.bs2n(request.id);
+				Logger.print(Level.V, "read id " + id);
+				
+				if (length == 0) {
+					continue;
+				}
 
 				sr.readFull(request.content);
 				String content = new String(request.content);
@@ -99,7 +120,7 @@ public class Client {
 									+ content).getBytes();
 						}
 
-						Logger.printf(Level.V, "write %d %d", Convert.bs2n(request.id), result.length);
+						Logger.printf(Level.V, "write %d %d", id, result.length);
 
 						try {
 							String str = new String(result);
@@ -108,10 +129,13 @@ public class Client {
 						}
 
 						try {
-							synchronized (os) {
+							OutputStream os = mSocket.getOutputStream();
+							
+							synchronized (mSocket) {
 								os.write(Convert.n2bs(4 + result.length, 4));
 								os.write(request.id);
 								os.write(result);
+								os.flush();
 							}
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
