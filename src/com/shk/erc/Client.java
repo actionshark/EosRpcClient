@@ -113,16 +113,16 @@ public class Client {
 
 						try {
 							Socket socket = new Socket(clientHost, clientPort);
-							socket.setSoTimeout(300);
+							socket.setSoTimeout(1000);
 
 							OutputStream out = socket.getOutputStream();
 							out.write(request.content);
 							out.flush();
 
 							InputStream in = socket.getInputStream();
-							StreamReader sr = new StreamReader(in);
-							result = sr.readBytes();
-
+							HttpReader hr = new HttpReader(in);
+							result = hr.read();
+							
 							socket.close();
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
