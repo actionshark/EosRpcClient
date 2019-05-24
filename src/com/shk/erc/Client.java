@@ -71,6 +71,20 @@ public class Client {
 				Logger.print(Level.V, "read id " + id);
 				
 				if (length == 0) {
+					if (id != 0) {
+						try {
+							OutputStream os = mSocket.getOutputStream();
+							
+							synchronized (mSocket) {
+								os.write(Convert.n2bs(4, 4));
+								os.write(request.id);
+								os.flush();
+							}
+						} catch (Exception e) {
+							Logger.print(Level.E, e);
+						}
+					}
+					
 					continue;
 				}
 
