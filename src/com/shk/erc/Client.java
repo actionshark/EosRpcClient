@@ -23,7 +23,7 @@ public class Client {
 			content = new byte[length];
 		}
 	}
-	
+
 	private Socket mSocket;
 
 	public String serverHost;
@@ -34,21 +34,27 @@ public class Client {
 
 	public void start() {
 		try {
+			mSocket.close();
+		} catch (Exception e1) {
+		}
+
+		try {
 			mSocket = new Socket();
 			mSocket.connect(new InetSocketAddress(serverHost, serverPort));
-			
+
+			// 心跳
 			ThreadUtil.getInstance().run(new Runnable() {
 				@Override
 				public void run() {
 					try {
 						OutputStream os = mSocket.getOutputStream();
-						
+
 						synchronized (mSocket) {
 							os.write(Convert.n2bs(4, 4));
 							os.write(Convert.n2bs(0, 4));
 							os.flush();
 						}
-						
+
 						Logger.print(Level.V, "heart beat");
 					} catch (Exception e) {
 						Logger.print(Level.E, e);
@@ -57,8 +63,9 @@ public class Client {
 			}, 30000, 30000);
 
 			while (true) {
+				// 从服务器读请求
 				StreamReader sr = new StreamReader(mSocket.getInputStream());
-				
+
 				byte[] len = new byte[4];
 				sr.readFull(len);
 				int length = (int) Convert.bs2n(len) - 4;
@@ -69,12 +76,12 @@ public class Client {
 				sr.readFull(request.id);
 				int id = (int) Convert.bs2n(request.id);
 				Logger.print(Level.V, "read id " + id);
-				
+
 				if (length == 0) {
 					if (id != 0) {
 						try {
 							OutputStream os = mSocket.getOutputStream();
-							
+
 							synchronized (mSocket) {
 								os.write(Convert.n2bs(4, 4));
 								os.write(request.id);
@@ -84,7 +91,7 @@ public class Client {
 							Logger.print(Level.E, e);
 						}
 					}
-					
+
 					continue;
 				}
 
@@ -109,6 +116,7 @@ public class Client {
 				ThreadUtil.getInstance().run(new Runnable() {
 					@Override
 					public void run() {
+						// 转给本地
 						byte[] result;
 
 						try {
@@ -122,7 +130,7 @@ public class Client {
 							InputStream in = socket.getInputStream();
 							HttpReader hr = new HttpReader(in);
 							result = hr.read();
-							
+
 							socket.close();
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
@@ -142,9 +150,10 @@ public class Client {
 						} catch (Exception e) {
 						}
 
+						// 再发给服务器
 						try {
 							OutputStream os = mSocket.getOutputStream();
-							
+
 							synchronized (mSocket) {
 								os.write(Convert.n2bs(4 + result.length, 4));
 								os.write(request.id);
@@ -154,7 +163,7 @@ public class Client {
 						} catch (Exception e) {
 							Logger.print(Level.E, e);
 						}
-						
+
 						Logger.print(Level.V, "write finish");
 					}
 				});

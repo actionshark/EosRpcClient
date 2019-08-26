@@ -12,11 +12,11 @@ public class Main {
 		Logger.setInstance(fl);
 		Logger.setLevel(Level.D);
 
-		String serverHost = "47.106.186.138";
-		int serverPort = 10003;
+		String serverHost = "";
+		int serverPort = 10002;
 
 		String clientHost = "127.0.0.1";
-		int clientPort = 8888;
+		int clientPort = 10000;
 
 		for (int i = 0; i < args.length; i++) {
 			String str = args[i];
@@ -40,6 +40,17 @@ public class Main {
 		client.clientHost = clientHost;
 		client.clientPort = clientPort;
 
-		client.start();
+		for (int i = 0; ; i++) {
+			Logger.print(Level.I, "start " + i);
+			
+			client.start();
+			
+			Logger.print(Level.I, "error cased, restart after 3s");
+			
+			try {
+				Thread.sleep(3000);
+			} catch (Exception e) {
+			}
+		}
 	}
 }
